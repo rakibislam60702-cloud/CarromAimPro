@@ -1,4 +1,4 @@
- name: Build Carrom Aim APK
+name: Build Carrom Aim APK
 
 on:
   push:
@@ -25,16 +25,12 @@ jobs:
       - name: Prepare Project and Keystore
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
-          
-          # Generate keystore directly in root, extracted, and app directories
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          
-          cp debug.keystore extracted/
-          mkdir -p extracted/app
-          cp debug.keystore extracted/app/
-          mkdir -p ~/.android
-          cp debug.keystore ~/.android/
-          
+          cp debug.keystore extracted/ || true
+          mkdir -p extracted/app || true
+          cp debug.keystore extracted/app/ || true
+          mkdir -p ~/.android || true
+          cp debug.keystore ~/.android/ || true
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build APK
@@ -42,7 +38,6 @@ jobs:
           DIR=$(find extracted -name "build.gradle*" -exec dirname {} \; | head -n 1)
           if [ -z "$DIR" ]; then DIR="extracted"; fi
           cd "$DIR"
-          
           if [ -f "./gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleDebug --no-daemon
@@ -56,4 +51,3 @@ jobs:
         with:
           name: Carrom-Aim-Pro-APK
           path: "**/*.apk"
-          
