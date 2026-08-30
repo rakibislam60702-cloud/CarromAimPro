@@ -19,19 +19,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract Project Files
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Prepare Project and Build APK
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
-          PROJECT_DIR=$(find extracted -name "settings.gradle*" -o -name "build.gradle*" | head -n 1 | xargs dirname)
-          if [ -n "$PROJECT_DIR" ]; then
-            cp -r "$PROJECT_DIR"/* .
-          fi
-          chmod +x gradlew || true
-
-      - name: Accept Licenses and Build APK
-        run: |
+          
+          # Find directory with build.gradle
+          DIR=$(find extracted -name "build.gradle*" -exec dirname {} \; | head -n 1)
+          if [ -z "$DIR" ]; then DIR="."; fi
+          
+          echo "Building from directory: $DIR"
+          cd "$DIR"
+          
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
