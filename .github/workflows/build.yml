@@ -26,12 +26,19 @@ jobs:
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
           
-          # Find directory with build.gradle
+          # Find project root directory
           DIR=$(find extracted -name "build.gradle*" -exec dirname {} \; | head -n 1)
           if [ -z "$DIR" ]; then DIR="."; fi
           
           echo "Building from directory: $DIR"
           cd "$DIR"
+          
+          # Generate standard debug.keystore in multiple expected locations
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p app
+          cp debug.keystore app/
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/
           
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
@@ -47,5 +54,5 @@ jobs:
         if: always()
         with:
           name: Carrom-Aim-Pro-APK
-          path: "**/build/outputs/apk/**/*.apk"
+          path: "**/*.apk"
           
