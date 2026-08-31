@@ -22,73 +22,69 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Prepare Project and Inject Rakib Custom UI
+      - name: Prepare Project and Inject Custom UI
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
-          mkdir -p extracted/app/src/main/res/drawable || true
           
           # Inject Photos
+          mkdir -p extracted/app/src/main/res/drawable || true
           cp image.jpg extracted/app/src/main/res/drawable/my_photo_1.jpg || true
           cp image-1.jpg extracted/app/src/main/res/drawable/my_photo_2.jpg || true
 
-          # Find exact layout directory and override activity_main.xml safely
+          # Find exact layout directory
           LAYOUT_DIR=$(find extracted -type d -name "layout" | head -n 1)
           if [ -n "$LAYOUT_DIR" ]; then
-            cat << 'EOF' > "$LAYOUT_DIR/activity_main.xml"
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#0A0E17"
-    android:orientation="vertical"
-    android:padding="20dp"
-    android:gravity="center_horizontal">
+            cat > "$LAYOUT_DIR/activity_main.xml" << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#0A0E17"
+              android:orientation="vertical"
+              android:padding="20dp"
+              android:gravity="center_horizontal">
 
-    <!-- Photo Banner Image -->
-    <ImageView
-        android:id="@+id/bannerImage"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/my_photo_2"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp" />
+              <ImageView
+                  android:id="@+id/bannerImage"
+                  android:layout_width="match_parent"
+                  android:layout_height="220dp"
+                  android:scaleType="centerCrop"
+                  android:src="@drawable/my_photo_2"
+                  android:layout_marginTop="16dp"
+                  android:layout_marginBottom="16dp" />
 
-    <!-- Branding Title -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rakib AI Engine"
-        android:textColor="#00E5FF"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp"/>
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Rakib AI Engine"
+                  android:textColor="#00E5FF"
+                  android:textSize="24sp"
+                  android:textStyle="bold"
+                  android:layout_marginBottom="24dp"/>
 
-    <!-- Key Input Field -->
-    <EditText
-        android:id="@+id/etKeyInput"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:background="#151E2E"
-        android:hint="Enter 7-Day or Lifetime Key"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#5B6F88"
-        android:paddingHorizontal="16dp"
-        android:textSize="14sp"
-        android:layout_marginBottom="20dp"/>
+              <EditText
+                  android:id="@+id/etKeyInput"
+                  android:layout_width="match_parent"
+                  android:layout_height="52dp"
+                  android:background="#151E2E"
+                  android:hint="Enter 7-Day or Lifetime Key"
+                  android:textColor="#FFFFFF"
+                  android:textColorHint="#5B6F88"
+                  android:paddingHorizontal="16dp"
+                  android:textSize="14sp"
+                  android:layout_marginBottom="20dp"/>
 
-    <!-- Launch Button -->
-    <Button
-        android:id="@+id/btnStartEngine"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="LAUNCH CARROM POOL"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:backgroundTint="#00C853"/>
+              <Button
+                  android:id="@+id/btnStartEngine"
+                  android:layout_width="match_parent"
+                  android:layout_height="56dp"
+                  android:text="LAUNCH CARROM POOL"
+                  android:textColor="#FFFFFF"
+                  android:textStyle="bold"
+                  android:backgroundTint="#00C853"/>
 
-</LinearLayout>
-EOF
+          </LinearLayout>
+          EOF
           fi
 
           # Keystore setup
