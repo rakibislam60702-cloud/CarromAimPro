@@ -26,15 +26,26 @@ jobs:
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
           
-          # Inject Photos directly to all drawable folders
+          # Create fake dummy google-services.json to prevent missing json build fail
+          find extracted -name "app" -type d | while read dir; do
+            cat << 'EOF' > "$dir/google-services.json"
+          {
+            "project_info": {"project_number": "123456789", "project_id": "carrom-aim-pro", "storage_bucket": "carrom-aim-pro.appspot.com"},
+            "client": [{"client_info": {"mobilesdk_app_id": "1:123456789:android:abcdef", "android_client_info": {"package_name": "com.aistudio.aimmaster.pkzywr"}}, "api_key": [{"current_key": "fakekey"}], "services": {}}]
+          }
+          EOF
+          done
+
+          # Safe photo replacement without duplicate names
           find extracted -type d -name "drawable*" | while read dir; do
             cp image.jpg "$dir/my_photo_1.jpg" || true
             cp image-1.jpg "$dir/my_photo_2.jpg" || true
-            cp image.jpg "$dir/banner.jpg" || true
-            cp image-1.jpg "$dir/banner.png" || true
+            # Replace existing icons/banners safely
+            if [ -f "$dir/banner.jpg" ]; then cp image-1.jpg "$dir/banner.jpg"; fi
+            if [ -f "$dir/banner.png" ]; then cp image-1.jpg "$dir/banner.png"; fi
           done
 
-          # Safe Replacement of Title and Texts with Python
+          # Safe text replacement with Python
           python3 -c "
           import os
 
@@ -47,7 +58,6 @@ jobs:
                               with open(path, 'r', encoding='utf-8') as f:
                                   content = f.read()
                               
-                              # Replace original titles with Rakib AI Engine
                               new_content = content.replace('Aim Master', 'Rakib AI Engine')
                               new_content = new_content.replace('AIM MASTER CLOUD', 'RAKIB AI ENGINE')
                               new_content = new_content.replace('Aim Master Pro', 'Rakib AI Engine')
