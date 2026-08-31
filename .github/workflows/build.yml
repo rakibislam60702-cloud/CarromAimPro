@@ -22,7 +22,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Prepare Project and Inject Custom UI
+      - name: Replace UI with Rakib Engine Dashboard
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
           
@@ -31,61 +31,145 @@ jobs:
           cp image.jpg extracted/app/src/main/res/drawable/my_photo_1.jpg || true
           cp image-1.jpg extracted/app/src/main/res/drawable/my_photo_2.jpg || true
 
-          # Find exact layout directory
-          LAYOUT_DIR=$(find extracted -type d -name "layout" | head -n 1)
-          if [ -n "$LAYOUT_DIR" ]; then
-            cat > "$LAYOUT_DIR/activity_main.xml" << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="#0A0E17"
-              android:orientation="vertical"
-              android:padding="20dp"
-              android:gravity="center_horizontal">
+          # Find Main Screen Compose files and clean UI
+          MAIN_SCREEN=$(find extracted -name "*Screen*.kt" -o -name "MainActivity.kt" | grep -v "theme" | head -n 1)
+          
+          # Force clean launcher UI activity
+          find extracted -name "MainActivity.kt" | while read file; do
+            cat << 'EOF' > "$file"
+package com.aistudio.aimmaster.pkzywr
 
-              <ImageView
-                  android:id="@+id/bannerImage"
-                  android:layout_width="match_parent"
-                  android:layout_height="220dp"
-                  android:scaleType="centerCrop"
-                  android:src="@drawable/my_photo_2"
-                  android:layout_marginTop="16dp"
-                  android:layout_marginBottom="16dp" />
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Rakib AI Engine"
-                  android:textColor="#00E5FF"
-                  android:textSize="24sp"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="24dp"/>
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            var keyText by remember { mutableStateOf("") }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF090D16))
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // Photo Banner
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                ) {
+                    val photoRes = resources.getIdentifier("my_photo_2", "drawable", packageName).let {
+                        if (it != 0) it else resources.getIdentifier("my_photo_1", "drawable", packageName)
+                    }
+                    if (photoRes != 0) {
+                        Image(
+                            painter = painterResource(id = photoRes),
+                            contentDescription = "Rakib Banner",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
 
-              <EditText
-                  android:id="@+id/etKeyInput"
-                  android:layout_width="match_parent"
-                  android:layout_height="52dp"
-                  android:background="#151E2E"
-                  android:hint="Enter 7-Day or Lifetime Key"
-                  android:textColor="#FFFFFF"
-                  android:textColorHint="#5B6F88"
-                  android:paddingHorizontal="16dp"
-                  android:textSize="14sp"
-                  android:layout_marginBottom="20dp"/>
+                Spacer(modifier = Modifier.height(16.dp))
 
-              <Button
-                  android:id="@+id/btnStartEngine"
-                  android:layout_width="match_parent"
-                  android:layout_height="56dp"
-                  android:text="LAUNCH CARROM POOL"
-                  android:textColor="#FFFFFF"
-                  android:textStyle="bold"
-                  android:backgroundTint="#00C853"/>
+                Text(
+                    text = "Rakib AI Engine",
+                    color = Color(0xFF00E5FF),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-          </LinearLayout>
-          EOF
-          fi
+                Text(
+                    text = "Carrom Trajectory & Aim Assist",
+                    color = Color(0xFF8B9BB4),
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 32.dp)
+                )
+
+                // Key Input
+                OutlinedTextField(
+                    value = keyText,
+                    onValueChange = { keyText = it },
+                    label = { Text("Enter 7-Day or Lifetime Key", color = Color(0xFF5B6F88)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF00E5FF),
+                        unfocusedBorderColor = Color(0xFF1E293B),
+                        focusedContainerColor = Color(0xFF131B2A),
+                        unfocusedContainerColor = Color(0xFF131B2A)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Launch Button
+                Button(
+                    onClick = {
+                        if (!Settings.canDrawOverlays(this@MainActivity)) {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:$packageName")
+                            )
+                            startActivity(intent)
+                            Toast.makeText(this@MainActivity, "Grant Overlay Permission", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val launchIntent = packageManager.getLaunchIntentForPackage("com.miniclip.carrom")
+                            if (launchIntent != null) {
+                                startActivity(launchIntent)
+                            } else {
+                                Toast.makeText(this@MainActivity, "Carrom Disc Pool not installed!", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853))
+                ) {
+                    Text(
+                        text = "LAUNCH CARROM POOL",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+EOF
+          done
 
           # Keystore setup
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
