@@ -22,12 +22,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Prepare Project and Keystore
+      - name: Prepare Project and Inject Photos
         run: |
           unzip -q aim-master-pro.zip -d extracted || true
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p extracted/app/src/main/res/drawable || true
+          cp image.jpg extracted/app/src/main/res/drawable/my_photo_1.jpg || true
+          cp image-1.jpg extracted/app/src/main/res/drawable/my_photo_2.jpg || true
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
           cp debug.keystore extracted/ || true
-          mkdir -p extracted/app || true
           cp debug.keystore extracted/app/ || true
           mkdir -p ~/.android || true
           cp debug.keystore ~/.android/ || true
@@ -51,3 +53,4 @@ jobs:
         with:
           name: Carrom-Aim-Pro-APK
           path: "**/*.apk"
+          
